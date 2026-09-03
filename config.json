@@ -1,10 +1,9 @@
 {
     "app_title": "Sistem Presensi Mahasiswa & Kelas",
     "company_name": "Lab Micro Teaching FisMat",
-    "company_address": "Program Studi Pendidikan Matematika",
+    "company_address": "Kampus 3",
     "work_start_time": "07:00",
     "work_end_time": "18:00",
-    "late_tolerance_minutes": 999999999,
     "theme_mode": "dark",
     "color_theme": "blue"
 }

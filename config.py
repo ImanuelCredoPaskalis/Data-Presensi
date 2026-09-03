@@ -14,7 +14,6 @@ DEFAULT_CONFIG = {
     "company_address": "Program Studi Pendidikan Matematika",
     "work_start_time": "08:00",
     "work_end_time": "17:00",
-    "late_tolerance_minutes": 15,
     "theme_mode": "dark",  # "dark" or "light"
     "color_theme": "blue"   # "blue", "green", "dark-blue"
 }

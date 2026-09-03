@@ -10,9 +10,9 @@ from openpyxl.utils import get_column_letter
 from config import load_config
 from database import calculate_time_diff_hours
 
-def export_to_excel(records, file_path, start_date=None, end_date=None):
+def build_excel_workbook(records, start_date=None, end_date=None):
     """
-    Ekspor list data presensi mahasiswa ke file Excel dengan format rapi & profesional.
+    Membuat objek openpyxl.Workbook dari data presensi mahasiswa.
     """
     config = load_config()
     company_name = config.get("company_name", "Lab Micro Teaching FisMat")
@@ -163,31 +163,71 @@ def export_to_excel(records, file_path, start_date=None, end_date=None):
                 max_len = len(val_str)
         ws.column_dimensions[col_letter].width = max(max_len + 4, 11)
 
+    return wb
+
+def export_to_excel(records, file_path, start_date=None, end_date=None):
+    """
+    Ekspor list data presensi mahasiswa ke file Excel dengan format rapi & profesional.
+    """
+    wb = build_excel_workbook(records, start_date, end_date)
     wb.save(file_path)
     return True
+
+def get_excel_bytes(records, start_date=None, end_date=None):
+    """
+    Menghasilkan data binary Excel (.xlsx) di memory untuk download via web browser.
+    """
+    import io
+    wb = build_excel_workbook(records, start_date, end_date)
+    output = io.BytesIO()
+    wb.save(output)
+    return output.getvalue()
 
 def export_to_csv(records, file_path):
     """
     Ekspor list data presensi mahasiswa ke file CSV.
-    file_path bisa berupa path string ATAU objek file-like (StringIO).
     """
-    import io as _io
-    if isinstance(file_path, (str, bytes)):
-        cm = open(file_path, mode="w", newline="", encoding="utf-8-sig")
-    else:
-        # file-like object (StringIO) — langsung pakai, tidak di-close dari sini
-        cm = _io.StringIO.__new__(_io.StringIO)  # dummy, kita tangani manual
-        cm = file_path
-        _write_csv(records, cm)
-        return True
+    with open(file_path, mode="w", newline="", encoding="utf-8-sig") as f:
+        writer = csv.writer(f)
+        writer.writerow([
+            "No", "Tanggal", "Nama Mahasiswa", "Program Studi", "Status Mahasiswa",
+            "Jam Masuk", "Total Sesi Kelas", "Rincian Jam Kelas", "Total Durasi Kelas",
+            "Jam Tugas Keluar", "Jam Kembali Tugas", "Jam Keluar",
+            "Durasi Total", "Status", "Keterangan Tugas"
+        ])
 
-    with cm as f:
-        _write_csv(records, f)
+        for idx, r in enumerate(records, 1):
+            total_sesi = r.get("total_sesi_kelas", 0)
+            rincian_kelas = r.get("ringkasan_kelas") or ""
+            durasi_total_kelas = r.get("durasi_total_kelas") or ""
+            durasi_kerja = calculate_time_diff_hours(r.get("jam_masuk"), r.get("jam_keluar"))
+            
+            writer.writerow([
+                idx,
+                r.get("tanggal", ""),
+                r.get("nama", ""),
+                r.get("departemen", ""),
+                r.get("jabatan", "Mahasiswa"),
+                r.get("jam_masuk", ""),
+                total_sesi,
+                rincian_kelas,
+                durasi_total_kelas,
+                r.get("jam_bertugas_keluar", ""),
+                r.get("jam_kembali", ""),
+                r.get("jam_keluar", ""),
+                durasi_kerja,
+                r.get("status", ""),
+                r.get("keterangan_tugas", "")
+            ])
     return True
 
-
-def _write_csv(records, f):
-    writer = csv.writer(f)
+def get_csv_bytes(records):
+    """
+    Menghasilkan data binary CSV di memory untuk download via web browser.
+    """
+    import io
+    output = io.StringIO()
+    writer = csv.writer(output)
     writer.writerow([
         "No", "Tanggal", "Nama Mahasiswa", "Program Studi", "Status Mahasiswa",
         "Jam Masuk", "Total Sesi Kelas", "Rincian Jam Kelas", "Total Durasi Kelas",
@@ -200,7 +240,7 @@ def _write_csv(records, f):
         rincian_kelas = r.get("ringkasan_kelas") or ""
         durasi_total_kelas = r.get("durasi_total_kelas") or ""
         durasi_kerja = calculate_time_diff_hours(r.get("jam_masuk"), r.get("jam_keluar"))
-
+        
         writer.writerow([
             idx,
             r.get("tanggal", ""),
@@ -218,4 +258,4 @@ def _write_csv(records, f):
             r.get("status", ""),
             r.get("keterangan_tugas", "")
         ])
-    return True
+    return output.getvalue().encode("utf-8-sig")

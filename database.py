@@ -408,14 +408,12 @@ def record_attendance(pegawai_id, action_type, keterangan="", custom_time=None):
 
         # Evaluasi Tepat Waktu vs Terlambat
         work_start = config.get("work_start_time", "08:00")
-        tol_min = int(config.get("late_tolerance_minutes", 15))
         
         status = "Tepat Waktu"
         try:
             cur_dt = datetime.datetime.strptime(now_time, "%H:%M:%S").time()
             start_h, start_m = parse_time_setting(work_start, 8, 0)
-            limit_dt = (datetime.datetime.combine(datetime.date.today(), datetime.time(start_h, start_m)) + 
-                        datetime.timedelta(minutes=tol_min)).time()
+            limit_dt = datetime.time(start_h, start_m)
             if cur_dt > limit_dt:
                 status = "Terlambat"
         except Exception:
